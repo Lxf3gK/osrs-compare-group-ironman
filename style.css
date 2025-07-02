@@ -1,0 +1,155 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #181818;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+h1 {
+    text-align: center;
+    margin-top: 24px;
+}
+#comparison-table-container {
+    margin: 32px auto;
+    max-width: 1200px;
+    background: #232323;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    min-width: 900px;
+    font-size: 1.08em;
+    table-layout: fixed;
+}
+th, td {
+    border: 1px solid #333;
+    padding: 14px 18px;
+    text-align: center;
+    font-size: 1.08em;
+}
+th {
+    background: #2d3a4a;
+    color: #fff;
+    font-size: 1.14em;
+    font-weight: bold;
+}
+thead tr:nth-child(2) th {
+    background: #34495e;
+}
+td:first-child, th:first-child {
+    background: #2a2620;
+    color: #e0e0e0;
+    font-weight: bold;
+    border-right: 3px solid #232323;
+}
+tr.total-row td {
+    background: #2e3d2e !important;
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.12em;
+}
+tr.leading-member1 td {
+    background: #233d23 !important;
+}
+tr.leading-member2 td {
+    background: #3d2323 !important;
+}
+tr.tied-row td {
+    background: #3d3d23 !important;
+}
+tr:hover td {
+    background: #333 !important;
+}
+.comparison-arrow {
+    font-size: 1.7em;
+    filter: drop-shadow(0 1px 2px #0008);
+    min-width: 40px;
+    display: inline-block;
+}
+/* Header row styles */
+table thead tr:first-child th, table thead tr:nth-child(2) th {
+    background: #2d3a4a;
+    color: #fff;
+    font-weight: bold;
+    border-bottom: 2px solid #232323;
+}
+
+/* First column (skill names) */
+table td:first-child, table th:first-child {
+    background: #f5e9c8;
+    color: #f0f0f0;
+    font-weight: bold;
+    border-right: 2px solid #232323;
+}
+th.skill-col { width: 80px; min-width: 60px; }
+th.level-col, th.xp-col { width: 110px; min-width: 90px; }
+th.swap-col { width: 48px; min-width: 48px; max-width: 48px; padding: 0; }
+th.xpdiff-col { width: 70px; min-width: 50px; }
+th.xp-col { width: 180px; min-width: 150px; }
+
+/* Prevent sort button text from wrapping */
+#comparison-table-container th button {
+    white-space: nowrap;
+}
+
+/* Ensure swap button doesn't resize */
+#swap-members {
+    min-width: 32px;
+    width: 32px;
+    max-width: 32px;
+    min-height: 28px;
+    height: 28px;
+    max-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    padding: 0;
+}
+@media (max-width: 1000px) {
+    #comparison-table-container {
+        padding: 8px;
+    }
+    table {
+        font-size: 13px;
+        min-width: 600px;
+    }
+    th, td { padding: 7px 8px; font-size: 0.98em; }
+}
+@media (max-width: 600px) {
+  body {
+    font-size: 0.95em;
+  }
+  table {
+    font-size: 0.92em;
+    min-width: 600px;
+  }
+  th, td {
+    padding: 4px 3px;
+  }
+  .skill-col, .level-col, .xp-col, .xpdiff-col {
+    min-width: 60px;
+    max-width: 90px;
+    font-size: 0.95em;
+  }
+  .swap-col {
+    min-width: 36px;
+    max-width: 36px;
+  }
+  .comparison-arrow {
+    font-size: 1.1em !important;
+  }
+  .total-row td {
+    font-size: 1.05em;
+  }
+  /* Make sure the table container scrolls horizontally */
+  #comparison-table-container > div {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
