@@ -63,12 +63,19 @@ function parseGroupData(html) {
 }
 
 let hideZeroXpState = false;
+let container = null;
+
+// Get the main container for the comparison table
+// const container = document.getElementById("comparison-table-container");
 
 function renderComparisonTable(data, sortState) {
     if (!data) {
-        document.getElementById("comparison-table-container").innerHTML = "<p>Could not load group data.</p>";
+        container.innerHTML = "<p>Could not load group data.</p>";
         return;
     }
+    // Save scroll position of the table container (by id)
+    const prevScrollDiv = document.getElementById('table-scroll');
+    let prevScrollLeft = prevScrollDiv ? prevScrollDiv.scrollLeft : 0;
     // Determine if there are any matching 0 XP rows (excluding total row)
     const hasMatchingZeroXp = data.skills.slice(1).some(row => {
         const xp1 = parseInt(row.member1.xp.replace(/,/g, '')) || 0;
@@ -76,7 +83,6 @@ function renderComparisonTable(data, sortState) {
         return xp1 === 0 && xp2 === 0;
     });
     // Add hide-zero-xp checkbox above the table only if needed
-    const container = document.getElementById("comparison-table-container");
     let controlsHtml = '';
     if (hasMatchingZeroXp) {
         controlsHtml = `<div style="margin-bottom:12px;">
@@ -96,7 +102,7 @@ function renderComparisonTable(data, sortState) {
         });
     }
     // Build header row 1: member names
-    let html = '<div style="overflow-x:auto;"><table><thead>';
+    let html = '<div id="table-scroll" style="overflow-x:auto;"><table><thead>';
     html += '<tr>' +
         '<th class="skill-col" style="border-right:3px solid #232323;"></th>' +
         `<th class="level-col" colspan="2" style="border-right:3px solid #232323;">${data.memberNames[0] || ''}</th>` +
@@ -175,13 +181,20 @@ function renderComparisonTable(data, sortState) {
     });
     html += '</tbody></table></div>';
     container.innerHTML = controlsHtml + html;
+    // Restore scroll position after rendering (use requestAnimationFrame for reliability)
+    const newScrollDiv = document.getElementById('table-scroll');
+    if (newScrollDiv) {
+        requestAnimationFrame(() => {
+            newScrollDiv.scrollLeft = prevScrollLeft;
+        });
+    }
     // Re-attach event handler for the checkbox
     const hideZeroCb = document.getElementById('hide-zero-xp');
     if (hideZeroCb) {
         hideZeroCb.onchange = () => {
             hideZeroXpState = hideZeroCb.checked;
-            // Always use the original data for filtering
-            renderComparisonTable(window.originalData, sortState);
+            // Always use the current sort state and sorting logic for filtering
+            sortAndRender(window.currentSortState);
         };
     }
     // Re-attach sort and swap handlers
@@ -212,7 +225,14 @@ function sortAndRender(sortState) {
         renderComparisonTable(data, sortState);
         return;
     }
-    let getValue, secondaryKey, isSkillSort = false;
+    // Helper for member sort (XP or Level)
+    function memberSort(primary, secondary, isLevel = false) {
+        return (row) => {
+            let val = row[primary][isLevel ? 'level' : 'xp'];
+            return parseInt((val || '').replace(/,/g, '')) || 0;
+        };
+    }
+    let getValue, secondaryKey, tertiaryKey, isSkillSort = false, isMember1 = false, isMember2 = false, isMember1Level = false, isMember2Level = false;
     switch (sortState.member) {
         case 'skill':
             getValue = row => row.skill.toLowerCase();
@@ -220,23 +240,31 @@ function sortAndRender(sortState) {
             isSkillSort = true;
             break;
         case 'member1':
-            getValue = row => parseInt(row.member1.xp.replace(/,/g, '')) || 0;
-            secondaryKey = row => row.skill.toLowerCase();
+            getValue = memberSort('member1', 'member2');
+            secondaryKey = memberSort('member2', 'member1');
+            tertiaryKey = row => row.skill.toLowerCase();
+            isMember1 = true;
             break;
         case 'member2':
-            getValue = row => parseInt(row.member2.xp.replace(/,/g, '')) || 0;
-            secondaryKey = row => row.skill.toLowerCase();
+            getValue = memberSort('member2', 'member1');
+            secondaryKey = memberSort('member1', 'member2');
+            tertiaryKey = row => row.skill.toLowerCase();
+            isMember2 = true;
+            break;
+        case 'member1-level':
+            getValue = memberSort('member1', 'member2', true);
+            secondaryKey = memberSort('member2', 'member1', true);
+            tertiaryKey = row => row.skill.toLowerCase();
+            isMember1Level = true;
+            break;
+        case 'member2-level':
+            getValue = memberSort('member2', 'member1', true);
+            secondaryKey = memberSort('member1', 'member2', true);
+            tertiaryKey = row => row.skill.toLowerCase();
+            isMember2Level = true;
             break;
         case 'xpdiff':
             getValue = row => (parseInt(row.member1.xp.replace(/,/g, '')) || 0) - (parseInt(row.member2.xp.replace(/,/g, '')) || 0);
-            secondaryKey = row => row.skill.toLowerCase();
-            break;
-        case 'member1-level':
-            getValue = row => parseInt(row.member1.level.replace(/,/g, '')) || 0;
-            secondaryKey = row => row.skill.toLowerCase();
-            break;
-        case 'member2-level':
-            getValue = row => parseInt(row.member2.level.replace(/,/g, '')) || 0;
             secondaryKey = row => row.skill.toLowerCase();
             break;
         default:
@@ -249,12 +277,21 @@ function sortAndRender(sortState) {
         if (b.skill === 'Total') return 1;
         let vA = getValue(a), vB = getValue(b);
         if (vA === vB) {
-            // Secondary sort
             if (isSkillSort) {
                 // If skill names are equal, tiebreak by XP
                 vA = secondaryKey(a);
                 vB = secondaryKey(b);
                 return vB - vA; // Descending XP for tiebreak
+            } else if (isMember1 || isMember2 || isMember1Level || isMember2Level) {
+                // Secondary sort by the other member's XP or Level, same direction
+                let sA = secondaryKey(a), sB = secondaryKey(b);
+                if (sA !== sB) {
+                    if (sortState.order === 'asc') return sA - sB;
+                    if (sortState.order === 'desc') return sB - sA;
+                }
+                // Tertiary sort by skill name
+                let tA = tertiaryKey(a), tB = tertiaryKey(b);
+                return tA.localeCompare(tB);
             } else {
                 vA = secondaryKey(a);
                 vB = secondaryKey(b);
@@ -398,10 +435,11 @@ function attachSortHandlers() {
 
 window.addEventListener("DOMContentLoaded", async () => {
     let sortState = null;
-    const container = document.getElementById("comparison-table-container");
+    container = document.getElementById("comparison-table-container");
     try {
         const html = await fetchGroupData();
         window.baseData = parseGroupData(html); // immutable base
+        window.originalData = window.baseData; // for checkbox handler
         window.isSwapped = false;
         window.currentSortState = null;
         sortAndRender(null);
