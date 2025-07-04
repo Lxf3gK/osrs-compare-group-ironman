@@ -1,4 +1,4 @@
-const groupUrl = "https://secure.runescape.com/m=hiscore_oldschool_ironman/group-ironman/view-group?name=lxf3";
+const groupUrl = "https://secure.runescape.com/m=hiscore_oldschool_ironman/group-ironman/view-group?name=MissedFlicks";
 const corsProxy = "https://corsproxy.io/?";
 
 async function fetchGroupData() {
