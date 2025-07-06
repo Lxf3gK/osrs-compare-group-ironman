@@ -62,7 +62,7 @@ function parseGroupData(html) {
     return { memberNames, skills };
 }
 
-let hideZeroXpState = false;
+let hideZeroXpState = true;
 let container = null;
 
 // Get the main container for the comparison table
@@ -193,7 +193,7 @@ function renderComparisonTable(data, sortState) {
     if (hideZeroCb) {
         hideZeroCb.onchange = () => {
             hideZeroXpState = hideZeroCb.checked;
-            // Always use the current sort state and sorting logic for filtering
+            saveUiState();
             sortAndRender(window.currentSortState);
         };
     }
@@ -217,12 +217,14 @@ function getCurrentViewData() {
 }
 
 function sortAndRender(sortState) {
+    saveUiState();
     const data = getCurrentViewData();
     let skills = data.skills.slice();
     const totalRow = skills.shift();
     if (!sortState || !sortState.member) {
         skills.unshift(totalRow);
         renderComparisonTable(data, sortState);
+        renderRequirementsTable(data); // Always update requirements table with current order
         return;
     }
     // Helper for member sort (XP or Level)
@@ -309,6 +311,7 @@ function sortAndRender(sortState) {
     });
     skills.unshift(totalRow);
     renderComparisonTable({ ...data, skills }, sortState);
+    renderRequirementsTable({ ...data, skills }); // Always update requirements table with current order
 }
 
 function swapAndRender(sortState) {
@@ -323,6 +326,7 @@ function swapAndRender(sortState) {
         else newSortState = { ...sortState };
     }
     window.currentSortState = newSortState;
+    saveUiState();
     sortAndRender(newSortState);
 }
 
@@ -433,16 +437,270 @@ function attachSortHandlers() {
     }, 0);
 }
 
+// --- Persistent UI State Helpers ---
+function saveUiState() {
+    localStorage.setItem('hideZeroXpState', JSON.stringify(hideZeroXpState));
+    localStorage.setItem('reqTableHideComplete', JSON.stringify(reqTableHideComplete));
+    localStorage.setItem('currentSortState', JSON.stringify(window.currentSortState));
+    localStorage.setItem('reqTableSortState', JSON.stringify(reqTableSortState));
+    // Save the name of the member on the left
+    if (window.baseData && window.baseData.memberNames && window.baseData.memberNames.length > 0) {
+        const leftName = window.isSwapped ? window.baseData.memberNames[1] : window.baseData.memberNames[0];
+        localStorage.setItem('leftMemberName', leftName);
+    }
+}
+function loadUiState() {
+    function safeParse(val) {
+        if (val === null || val === undefined || val === 'undefined') return undefined;
+        try { return JSON.parse(val); } catch { return undefined; }
+    }
+    const hideZero = localStorage.getItem('hideZeroXpState');
+    const hideZeroVal = safeParse(hideZero);
+    if (hideZeroVal !== undefined) hideZeroXpState = hideZeroVal;
+    const reqHide = localStorage.getItem('reqTableHideComplete');
+    const reqHideVal = safeParse(reqHide);
+    if (reqHideVal !== undefined) reqTableHideComplete = reqHideVal;
+    const sortState = localStorage.getItem('currentSortState');
+    const sortStateVal = safeParse(sortState);
+    if (sortStateVal !== undefined) window.currentSortState = sortStateVal;
+    const reqSort = localStorage.getItem('reqTableSortState');
+    const reqSortVal = safeParse(reqSort);
+    if (reqSortVal !== undefined) reqTableSortState = reqSortVal;
+    // Don't load isSwapped from storage anymore
+}
+
+// Hardcoded requirements data (updated with provided list)
+const requirementsData = [
+    ["Fletching", "01-10"],
+    ["Construction", "08-10"],
+    ["Cooking", "14-20"],
+    ["Agility", "34-35"],
+    ["Prayer", "33-37", "for Protect from Magic"],
+    ["Woodcutting", "25-36"],
+    ["Crafting", "30-31"],
+    ["Firemaking", "01-30"],
+    ["Mining", "36-39"],
+    ["Prayer", "38-40", "for Protect from Missiles"],
+    ["Ranged", "33-37"],
+    ["Firemaking", "34-40"],
+    ["Firemaking", "40-49"],
+    ["Prayer", "41-43", "for Protect from Melee"],
+    ["Strength", "38-40"],
+    ["Agility", "43-56", "highly recommended: Obtain full Graceful on the Canifis Rooftop Course (maximising marks there with lower Agility levels. One is expected to reach ~58 Agility when doing so)."],
+    ["Construction", "19-20"],
+    ["Ranged", "37-40"],
+    ["Magic", "39-46"],
+    ["Hunter", "09-12"],
+    ["Smithing", "44-50"],
+    ["Construction", "32-37"],
+    ["Crafting", "45-49"],
+    ["Crafting", "49-50"],
+    ["Prayer", "43-45"],
+    ["Fishing", "33-50"],
+    ["Farming", "38-40"],
+    ["Slayer", "40-42"],
+    ["Cooking", "39-40"],
+    ["Cooking", "40-42"],
+    ["Cooking", "42-50"],
+    ["Mining", "43-50"],
+    ["Ranged", "43-60"],
+    ["Thieving", "47-50"],
+    ["Magic", "48-50"],
+    ["Firemaking", "49-50"],
+    ["Magic", "51-55"],
+    ["Runecraft", "33-35"],
+    ["Hunter", "16-27"],
+    ["Mining", "50-52"],
+    ["Woodcutting", "42-50"],
+    ["Herblore", "40-41"],
+    ["Woodcutting", "50-52"],
+    ["Hunter", "29-46"],
+    ["Hunter", "46-50"],
+    ["Fletching", "31-50"],
+    ["Farming", "41-46"],
+    ["Prayer", "49-50"],
+    ["Cooking", "50-66"],
+    ["Defence", "51-60"],
+    ["Strength", "51-60"],
+    ["Thieving", "54-56"],
+    ["Mining", "52-55"],
+    ["Magic", "55-65"],
+    ["Crafting", "52-61"],
+    ["Mining", "55-60"],
+    ["Woodcutting", "52-55"],
+    ["Defence", "60-65"],
+    ["Magic", "65-66"],
+    ["Fishing", "52-57"],
+    ["Smithing", "51-55"],
+    ["Hunter", "50-52"],
+    ["Smithing", "55-65"],
+    ["Runecraft", "40-50"],
+    ["Woodcutting", "55-68"],
+    ["Thieving", "56-58"],
+    ["Fishing", "59-60"],
+    ["Crafting", "61-65"],
+    ["Runecraft", "50-55"],
+    ["Fletching", "50-60"],
+    ["Firemaking", "50-60"],
+    ["Agility", "61-62"],
+    ["Hunter", "53-60"],
+    ["Agility", "63-68"],
+    ["Slayer", "64-69"],
+    ["Crafting", "66-70"],
+    ["Construction", "38-50"],
+    ["Magic", "70-75"],
+    ["Mining", "60-68"],
+    ["Smithing", "65-70"],
+    ["Firemaking", "60-66"],
+    ["Thieving", "63-64"],
+    ["Thieving", "65-72"],
+    ["Farming", "47-65"],
+    ["Herblore", "56-65"],
+    ["Attack", "58-65"],
+    ["Strength", "61-65"],
+    ["Firemaking", "66-75"],
+    ["Runecraft", "56-60"],
+    ["Construction", "50-60"],
+    ["Construction", "60-70"],
+    ["Farming", "66-70"],
+    ["Herblore", "66-70"],
+    ["Hunter", "64-70"],
+    ["Woodcutting", "68-70"]
+];
+
+let reqTableSortState = { member: null, order: null }; // null = default order
+let reqTableHideComplete = true; // Hide completed by default
+
+function renderRequirementsTable(mainData) {
+    // Get member names in current order
+    const memberNames = mainData.memberNames;
+    // Get skill levels for each member (by skill name)
+    const skillMap = {};
+    mainData.skills.forEach(row => {
+        skillMap[row.skill.toLowerCase()] = {
+            left: parseInt(row.member1.level.replace(/,/g, '')) || 0,
+            right: parseInt(row.member2.level.replace(/,/g, '')) || 0
+        };
+    });
+    // Prepare rows with parsed info
+    let rows = requirementsData.map((item, idx) => {
+        const [skill, step, ...rest] = item;
+        const tooltip = rest.join(' ').trim();
+        const match = step.match(/(\d+)[^\d]+(\d+)/);
+        const min = match ? parseInt(match[1]) : 0;
+        const max = match ? parseInt(match[2]) : 0;
+        const skillKey = skill.toLowerCase();
+        const left = skillMap[skillKey]?.left ?? 0;
+        const right = skillMap[skillKey]?.right ?? 0;
+        const leftMet = left >= max;
+        const rightMet = right >= max;
+        return {
+            idx,
+            skill,
+            step,
+            tooltip,
+            min,
+            max,
+            left,
+            right,
+            leftMet,
+            rightMet
+        };
+    });
+    // Hide completed rows if needed
+    if (reqTableHideComplete) {
+        rows = rows.filter(r => !(r.leftMet && r.rightMet));
+    }
+    // Sort
+    if (reqTableSortState.member === 'skill') {
+        rows.sort((a, b) => {
+            const cmp = a.skill.localeCompare(b.skill);
+            if (cmp !== 0) return reqTableSortState.order === 'asc' ? cmp : -cmp;
+            // Secondary: min step
+            return a.min - b.min;
+        });
+    } else {
+        // Default: original order
+        rows.sort((a, b) => a.idx - b.idx);
+    }
+    // Build table inside a styled container
+    let html = `<div id="requirements-controls" style="margin:18px 0 8px 0;">
+        <label style="cursor:pointer;font-size:1em;">
+            <input type="checkbox" id="hide-req-complete" style="vertical-align:middle;margin-right:6px;"${reqTableHideComplete ? ' checked' : ''}> Hide completed
+        </label>
+        <button id="sort-req-skill" style="margin-left:18px;cursor:pointer;">Sort by Skill ${reqTableSortState.member==='skill'?(reqTableSortState.order==='asc'?'▲':'▼'):'⇄'}</button>
+    </div>`;
+    html += `<div id="requirements-table-scroll" style="overflow-x:auto;"><table class="requirements-table"><thead><tr>` +
+        `<th>Skill</th><th>Step</th><th>${memberNames[0]}</th><th>${memberNames[1]}</th></tr></thead><tbody>`;
+    rows.forEach(row => {
+        html += `<tr>`;
+        html += `<td>${row.skill}</td>`;
+        if (row.tooltip) {
+            html += `<td title="${row.tooltip}"><span style="border-bottom:1px dotted #888;cursor:help;">${row.step}</span></td>`;
+        } else {
+            html += `<td>${row.step}</td>`;
+        }
+        // Show current level before check/X for each member
+        html += `<td style="text-align:center;">` +
+            `<span style="font-weight:bold;color:#ffd600;">${row.left}</span> ` +
+            (row.leftMet ? '<span style="color:#4caf50;font-size:1.3em;">✔</span>' : '<span style="color:#f44336;font-size:1.3em;">✗</span>') +
+            `</td>`;
+        html += `<td style="text-align:center;">` +
+            `<span style="font-weight:bold;color:#ffd600;">${row.right}</span> ` +
+            (row.rightMet ? '<span style="color:#4caf50;font-size:1.3em;">✔</span>' : '<span style="color:#f44336;font-size:1.3em;">✗</span>') +
+            `</td>`;
+        html += `</tr>`;
+    });
+    html += `</tbody></table></div>`;
+    // Render below main table
+    let reqContainer = document.getElementById('requirements-table-container');
+    if (!reqContainer) {
+        reqContainer = document.createElement('div');
+        reqContainer.id = 'requirements-table-container';
+        reqContainer.className = 'requirements-table-container';
+        container.parentNode.insertBefore(reqContainer, container.nextSibling);
+    } else {
+        reqContainer.className = 'requirements-table-container';
+    }
+    reqContainer.innerHTML = html;
+    // Attach handlers
+    document.getElementById('hide-req-complete').onchange = e => {
+        reqTableHideComplete = e.target.checked;
+        saveUiState();
+        renderRequirementsTable(getCurrentViewData());
+    };
+    document.getElementById('sort-req-skill').onclick = () => {
+        if (reqTableSortState.member === 'skill') {
+            // Toggle asc/desc/default
+            if (reqTableSortState.order === 'asc') reqTableSortState.order = 'desc';
+            else if (reqTableSortState.order === 'desc') reqTableSortState = { member: null, order: null };
+            else reqTableSortState.order = 'asc';
+        } else {
+            reqTableSortState = { member: 'skill', order: 'asc' };
+        }
+        saveUiState();
+        renderRequirementsTable(getCurrentViewData());
+    };
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
-    let sortState = null;
+    loadUiState();
+    let sortState = window.currentSortState || null;
     container = document.getElementById("comparison-table-container");
     try {
         const html = await fetchGroupData();
         window.baseData = parseGroupData(html); // immutable base
         window.originalData = window.baseData; // for checkbox handler
+        // Determine if swap is needed based on left member name
         window.isSwapped = false;
-        window.currentSortState = null;
-        sortAndRender(null);
+        const savedLeft = localStorage.getItem('leftMemberName');
+        if (savedLeft && window.baseData && window.baseData.memberNames && window.baseData.memberNames.length > 0) {
+            if (window.baseData.memberNames[0] !== savedLeft) {
+                window.isSwapped = true;
+            }
+        }
+        sortAndRender(window.currentSortState);
+        renderRequirementsTable(getCurrentViewData());
     } catch (e) {
         container.innerHTML = `<p>Error: ${e.message}</p>`;
         return;
