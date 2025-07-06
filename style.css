@@ -124,7 +124,7 @@ th.xp-col { width: 180px; min-width: 150px; }
 }
 
 .requirements-table {
-  min-width: 700px;
+  min-width: 350px;
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -216,5 +216,37 @@ th.xp-col { width: 180px; min-width: 150px; }
   .requirements-table td:first-child {
     min-width: 80px;
     font-size: 1em;
+  }
+  /* --- Requirements Table Responsive Tweaks --- */
+  .requirements-table th,
+  .requirements-table td {
+    padding: 4px 6px;
+    font-size: 0.97em;
+  }
+  .requirements-table th:nth-child(2),
+  .requirements-table td:nth-child(2) {
+    min-width: 48px;
+    max-width: 70px;
+    width: 18vw;
+    font-size: 0.93em;
+    word-break: break-word;
+  }
+  .requirements-table th:nth-child(3),
+  .requirements-table th:nth-child(4),
+  .requirements-table td:nth-child(3),
+  .requirements-table td:nth-child(4) {
+    min-width: 38px;
+    max-width: 60px;
+    width: 15vw;
+    font-size: 0.93em;
+    word-break: break-word;
+  }
+  .requirements-table th:first-child,
+  .requirements-table td:first-child {
+    min-width: 54px;
+    max-width: 90px;
+    width: 24vw;
+    font-size: 0.97em;
+    word-break: break-word;
   }
 }
